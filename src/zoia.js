@@ -13,6 +13,70 @@
 
 	zoiA.compile = function(tmplStr,data){
 
+		// DOM节点树
+		var nodeTree = {
+			childNodes:[],
+			loop:false
+		};
+
+		if(Array.isArray(data)){
+			nodeTree.loop = data;
+		}
+
+		parseNode(tmplStr,nodeTree);
+		console.log(nodeTree);
+
+		function parseNode(tmplStr,node){
+
+			var htmlTagRegExp = /<(\/?)\w+[^>\/]*(\/?)>/g;
+			var tmpOpeningStack = [];
+
+			var tmpTagRegResult;
+			var startIndex,endIndex,selfOpeningTag;
+			var totalIndex = 0;
+
+			while(tmpTagRegResult = htmlTagRegExp.exec(tmplStr)){
+				if(!tmpTagRegResult[1]){
+					if(tmpTagRegResult[2]){
+						// 自闭合标记
+						endIndex = tmpTagRegResult.index;
+					}else{
+						// 开启标记
+						if(!tmpOpeningStack.length){
+							startIndex = totalIndex + tmpTagRegResult[0].length;
+							selfOpeningTag = tmpTagRegResult[0];
+						}
+						tmpOpeningStack.push(tmpTagRegResult[0]);
+					}
+				}else{
+					// 闭合标记
+					endIndex = tmpTagRegResult.index;
+					tmpOpeningStack.pop();
+				}
+				if(!tmpOpeningStack.length){
+					console.log(startIndex,endIndex);
+					console.log(tmplStr.substring(startIndex,endIndex));
+					totalIndex = endIndex + tmpTagRegResult[0].length;
+					if(!node.childNodes){
+						node.childNodes = [];
+					}
+					node.childNodes.push({
+						selfOpeningTag:selfOpeningTag,
+						childHTML:tmplStr.substring(startIndex,endIndex)
+					});
+				}
+			}
+
+		}
+
+		
+
+
+
+		/*var htmlOpeningRegExp = /<\w+(?: [-_\w\d]+(?: ?= ?(?:['"][-_ \w\d]*['"]))?)* ?(\/?)>/g;
+
+		console.log(tmpOpeningStack,tmpEndingStack);*/
+
 		return function(){
 
 			return tmplStr;
