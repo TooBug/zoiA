@@ -1,3 +1,3 @@
 # zoiA
 
-A beautiful JavaScript template engine.
+A beautiful JavaScript template engine for HTML.
