@@ -11,50 +11,77 @@
 
 	var zoiA = {};
 
-	function parseNode(tmplStr,node){
+	zoiA.directiveList = 'loop|show|hide|condition';
 
-		var htmlTagRegExp = /<(\/?)\w+[^>\/]*(\/?)>/g;
-		var tmpOpeningStack = [];
+	function parseNode(node){
 
-		var tmpTagRegResult;
-		var startIndex,endIndex,selfOpeningTag;
-		var totalIndex = 0;
+		var zoiATagRegExp = new RegExp('<(\\w+)[^>]*z-(?:' + zoiA.directiveList + ')(?:=[\'"].*?[\'"])? *>','g');
 
-		while(tmpTagRegResult = htmlTagRegExp.exec(tmplStr)){
-			if(!tmpTagRegResult[1]){
-				if(tmpTagRegResult[2]){
-					// 自闭合标记
-					endIndex = tmpTagRegResult.index;
-					startIndex = endIndex;
-					// selfOpeningTag = tmpTagRegResult[0]; 
+		var zoiATagMatch;
+
+		var tmplStr = node.original;
+
+		while(zoiATagMatch = zoiATagRegExp.exec(tmplStr)){
+
+			if(!zoiATagMatch){
+				return false;
+			}
+
+			var tagName = zoiATagMatch[1];
+
+			/*if(typeof node.before === 'undefined'){
+				node.before = tmplStr.substring(0,zoiATagMatch.index);
+			}*/
+			var before = tmplStr.substring(0,zoiATagMatch.index);
+			var after;
+			if(before){
+				node.childNodes.push({
+					original:before,
+					childNodes:[]
+				});
+			}
+
+			tmplStr = tmplStr.substr(zoiATagMatch.index);
+
+			var tagRegExp = new RegExp('<(/?)'+tagName+'.*?>','g');
+			var tagStack = [];
+
+			var tmpRegExpResult;
+			var startIndex,endIndex,startTag,endTag;
+
+			while(tmpRegExpResult = tagRegExp.exec(tmplStr)){
+				if(tmpRegExpResult[1] === '/'){
+					tagStack.pop();
+					endIndex = tmpRegExpResult.index;
+					endTag = tmpRegExpResult[0];
 				}else{
-					// 开启标记
-					if(!tmpOpeningStack.length){
-						startIndex = totalIndex + tmpTagRegResult[0].length;
-						selfOpeningTag = tmpTagRegResult[0];
+					tagStack.push(tmpRegExpResult[0]);
+					if(!startTag){
+						startTag = tmpRegExpResult[0];
 					}
-					tmpOpeningStack.push(tmpTagRegResult[0]);
 				}
-			}else{
-				// 闭合标记
-				endIndex = tmpTagRegResult.index;
-				tmpOpeningStack.pop();
+				if(!tagStack.length) break;
 			}
-			if(!tmpOpeningStack.length){
-				console.log(startIndex,endIndex);
-				console.log(tmplStr.substring(startIndex,endIndex));
-				totalIndex = endIndex + tmpTagRegResult[0].length;
-				if(!node.childNodes){
-					node.childNodes = [];
-				}
-				var childNode = {
-					selfOpeningTag:selfOpeningTag,
-					childHTML:tmplStr.substring(startIndex,endIndex)
-				};
-				node.childNodes.push(childNode);
-				parseNode(childNode.childHTML,childNode);
-			}
+
+			node.childNodes.push({
+				original:tmplStr.substring(startTag.index,endIndex + endTag.length),
+				childNodes:[]
+			});
+
+			after = tmplStr.substr(endIndex + endTag.length);
+			tmplStr = tmplStr.substr(endIndex + endTag.length);
+			console.log(tmplStr);
 		}
+		if(after){
+			node.childNodes.push({
+				original:after,
+				childNodes:[]
+			});
+		}
+
+		/*node.childNodes.forEach(function(childNode){
+			parseNode(childNode);
+		});*/
 
 	}
 
@@ -63,14 +90,14 @@
 		// DOM节点树
 		var nodeTree = {
 			childNodes:[],
-			loop:false
+			original:tmplStr
 		};
 
 		if(Array.isArray(data)){
 			nodeTree.loop = data;
 		}
 
-		parseNode(tmplStr,nodeTree);
+		parseNode(nodeTree);
 		console.log(nodeTree);
 
 		var htmlOpeningRegExp = /<\w+(?: [-_\w\d]+(?: ?= ?(?:['"][-_ \w\d]*['"]))?)* ?(\/?)>/g;
