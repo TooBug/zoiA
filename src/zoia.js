@@ -47,7 +47,8 @@
 			var tagStack = [];
 
 			var tmpRegExpResult;
-			var startIndex,endIndex,startTag,endTag;
+			var startIndex = 0,endIndex = 0,
+				startTag = '',endTag = '';
 
 			while(tmpRegExpResult = tagRegExp.exec(tmplStr)){
 				if(tmpRegExpResult[1] === '/'){
@@ -63,14 +64,21 @@
 				if(!tagStack.length) break;
 			}
 
-			node.childNodes.push({
-				original:tmplStr.substring(startTag.index,endIndex + endTag.length),
-				childNodes:[]
-			});
-
 			after = tmplStr.substr(endIndex + endTag.length);
+
+			if(before || after){
+				var content = tmplStr.substring(startTag.length,endIndex);
+				node.childNodes.push({
+					// original:tmplStr.substring(startTag.index,endIndex + endTag.length),
+					original:content,
+					zoiA:parseZoiA(startTag),
+					startTag:startTag,
+					endTag:endTag,
+					childNodes:[]
+				});
+				// console.log(tmplStr,startTag,endTag,startIndex,endIndex);
+			}
 			tmplStr = tmplStr.substr(endIndex + endTag.length);
-			console.log(tmplStr);
 		}
 		if(after){
 			node.childNodes.push({
@@ -79,11 +87,29 @@
 			});
 		}
 
-		/*node.childNodes.forEach(function(childNode){
+		node.childNodes.forEach(function(childNode){
+			// console.log('childNode:',childNode);
 			parseNode(childNode);
-		});*/
+		});
 
 	}
+
+	function parseZoiA(startTag){
+
+		var zoiAMetaRegExp = new RegExp('z-(loop|show|hide|condition)(?:=[\'"](.*?)[\'"])?','g');
+		var zoiAMetaResult = {};
+
+		var tmpMatchResult;
+
+		while(tmpMatchResult = zoiAMetaRegExp.exec(startTag)){
+			zoiAMetaResult[tmpMatchResult[1]] = tmpMatchResult[2];
+		}
+
+		// console.log(zoiAMetaResult);
+		return zoiAMetaResult;
+
+	}
+
 
 	zoiA.compile = function(tmplStr,data){
 
