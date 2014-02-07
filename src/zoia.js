@@ -13,6 +13,11 @@
 
 	zoiA.directiveList = 'loop|show|hide|condition';
 
+	function encodeQuote(str){
+		if(!str) return str;
+		return str.replace(/"/g,'\\"');
+	}
+
 	function parseNode(node){
 
 		var zoiATagRegExp = new RegExp('<(\\w+)[^>]*z-(?:' + zoiA.directiveList + ')(?:=[\'"].*?[\'"])? *>','g');
@@ -44,7 +49,7 @@
 			tmplStr = tmplStr.substr(zoiATagMatch.index);
 
 			var tagRegExp = new RegExp('<(/?)'+tagName+'.*?>','g');
-			var tagStack = [];
+			var tagStack = [],found = false;
 
 			var tmpRegExpResult;
 			var startIndex = 0,endIndex = 0,
@@ -60,13 +65,14 @@
 					if(!startTag){
 						startTag = tmpRegExpResult[0];
 					}
+					found = true;
 				}
 				if(!tagStack.length) break;
 			}
 
 			after = tmplStr.substr(endIndex + endTag.length);
 
-			if(before || after){
+			if(found){
 				var content = tmplStr.substring(startTag.length,endIndex);
 				node.childNodes.push({
 					// original:tmplStr.substring(startTag.index,endIndex + endTag.length),
@@ -91,6 +97,36 @@
 			// console.log('childNode:',childNode);
 			parseNode(childNode);
 		});
+
+	}
+
+	function compileNode(node,init){
+
+		var functionBody = '';
+
+		if(init){
+			functionBody += 'var result = "";result += ';
+		}
+
+		functionBody += '"' + (encodeQuote(node.startTag) || '') + '"+';
+
+		if(node.childNodes.length){
+			node.childNodes.forEach(function(childNode){
+				functionBody += (compileNode(childNode) || '""');
+			});
+		}else{
+			functionBody += '"' + (encodeQuote(node.original) || '""') + '"+';
+		}
+
+		functionBody += '"' + (node.endTag || '') + '"+';
+
+		if(init){
+			functionBody += '"";return result;';
+			return new Function('data',functionBody);
+		}else{
+			return functionBody;
+		}
+
 
 	}
 
@@ -124,15 +160,12 @@
 		}
 
 		parseNode(nodeTree);
-		console.log(nodeTree);
 
-		var htmlOpeningRegExp = /<\w+(?: [-_\w\d]+(?: ?= ?(?:['"][-_ \w\d]*['"]))?)* ?(\/?)>/g;
-
-		// console.log(tmpOpeningStack,tmpEndingStack);
+		var compiledFunc = compileNode(nodeTree,true);
 
 		return function(){
 
-			return tmplStr;
+			return compiledFunc(data);
 
 		};
 
