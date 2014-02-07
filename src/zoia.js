@@ -11,7 +11,7 @@
 
 	var zoiA = {};
 
-	zoiA.directiveList = 'loop|show|hide|condition';
+	zoiA.directiveList = 'repeat|show|hide|condition';
 
 	function encodeQuote(str){
 		if(!str) return str;
@@ -111,7 +111,7 @@
 				var objStr = '';
 				var objPrefix = '';
 				var objChain = objChild.split('.');
-				objChain.unshift('data');
+				// objChain.unshift('data');
 
 				objChain.forEach(function(objPart){
 
@@ -132,23 +132,41 @@
 		var functionBody = '';
 
 		if(init){
-			functionBody += 'var result = "";result += ';
+			functionBody += 'var result = "";';
 		}
 
-		functionBody += '"' + (parseVar(encodeQuote(node.startTag)) || '') + '"+';
+		if(node.startTag){
+			functionBody += 'result += "' + parseVar(encodeQuote(node.startTag)) + '";';
+		}
 
 		if(node.childNodes.length){
 			node.childNodes.forEach(function(childNode){
-				functionBody += (compileNode(childNode) || '""');
+				functionBody += compileNode(childNode) || '';
 			});
 		}else{
-			functionBody += '"' + (parseVar(encodeQuote(node.original)) || '""') + '"+';
+			functionBody += 'result += "' + (parseVar(encodeQuote(node.original)) || '""') + '";';
+		}
+		if(node.endTag){
+			functionBody += 'result += "' + node.endTag + '";';
 		}
 
-		functionBody += '"' + (node.endTag || '') + '"+';
+		if(node.zoiA){
+			if(node.zoiA.repeat){
+				var repeatPart = node.zoiA.repeat.split(':');
+				var dataStr = repeatPart[1];
+				if(node.isRoot){
+					dataStr = 'data.' + dataStr;
+				}
+				functionBody = 'if(Array.isArray(' + dataStr + ')){' +
+									dataStr + '.forEach(function(' + repeatPart[0] + '){' +
+										functionBody +
+									'});' +
+								'}';
+			}
+		}
 
 		if(init){
-			functionBody += '"";return result;';
+			functionBody += 'return result;';
 			return new Function('data',functionBody);
 		}else{
 			return functionBody;
@@ -159,7 +177,7 @@
 
 	function parseZoiA(startTag){
 
-		var zoiAMetaRegExp = new RegExp('z-(loop|show|hide|condition)(?:=[\'"](.*?)[\'"])?','g');
+		var zoiAMetaRegExp = new RegExp('z-(' + zoiA.directiveList + ')(?:=[\'"](.*?)[\'"])?','g');
 		var zoiAMetaResult = {};
 
 		var tmpMatchResult;
@@ -186,6 +204,7 @@
 
 		var compiledFunc = compileNode(nodeTree,true);
 
+		console.log(nodeTree);
 		console.log(compiledFunc);
 
 		return compiledFunc;
