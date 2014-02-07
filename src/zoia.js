@@ -100,6 +100,33 @@
 
 	}
 
+	function parseVar(str){
+		if(!str) return str;
+		return str.replace(/{{([\w\d\.\$_]+?)}}/,function(match,varible){
+			
+			return '" + (' + getObjValue(varible) + ') + "';
+
+			function getObjValue(objChild){
+
+				var objStr = '';
+				var objPrefix = '';
+				var objChain = objChild.split('.');
+				objChain.unshift('data');
+
+				objChain.forEach(function(objPart){
+
+					if(!objPart) return;
+					objStr += objPrefix + objPart + ' && ';
+					objPrefix += objPart + '.';
+
+				});
+				return objStr.replace(/ && $/,'');
+
+			}
+
+		});
+	}
+
 	function compileNode(node,init){
 
 		var functionBody = '';
@@ -108,14 +135,14 @@
 			functionBody += 'var result = "";result += ';
 		}
 
-		functionBody += '"' + (encodeQuote(node.startTag) || '') + '"+';
+		functionBody += '"' + (parseVar(encodeQuote(node.startTag)) || '') + '"+';
 
 		if(node.childNodes.length){
 			node.childNodes.forEach(function(childNode){
 				functionBody += (compileNode(childNode) || '""');
 			});
 		}else{
-			functionBody += '"' + (encodeQuote(node.original) || '""') + '"+';
+			functionBody += '"' + (parseVar(encodeQuote(node.original)) || '""') + '"+';
 		}
 
 		functionBody += '"' + (node.endTag || '') + '"+';
@@ -147,7 +174,7 @@
 	}
 
 
-	zoiA.compile = function(tmplStr,data){
+	zoiA.compile = function(tmplStr){
 
 		// DOM节点树
 		var nodeTree = {
@@ -155,19 +182,13 @@
 			original:tmplStr
 		};
 
-		if(Array.isArray(data)){
-			nodeTree.loop = data;
-		}
-
 		parseNode(nodeTree);
 
 		var compiledFunc = compileNode(nodeTree,true);
 
-		return function(){
+		console.log(compiledFunc);
 
-			return compiledFunc(data);
-
-		};
+		return compiledFunc;
 
 	};
 
