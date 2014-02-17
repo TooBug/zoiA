@@ -11,7 +11,7 @@
 
 	var zoiA = {};
 
-	zoiA.directiveList = 'repeat|if|show|hide';
+	var directiveList = 'repeat|if|show|hide';
 
 	function encodeQuote(str){
 		if(!str) return str;
@@ -20,7 +20,7 @@
 
 	function parseNode(node){
 
-		var zoiATagRegExp = new RegExp('<(\\w+)[^>]*z-(?:' + zoiA.directiveList + ')(?:=[\'"].*?[\'"])? *>','g');
+		var zoiATagRegExp = new RegExp('<(\\w+)[^>]*z-(?:' + directiveList + ')(?:=[\'"].*?[\'"])? *>','g');
 
 		var zoiATagMatch;
 
@@ -186,7 +186,7 @@
 
 	function parseZoiA(startTag){
 
-		var zoiAMetaRegExp = new RegExp('z-(' + zoiA.directiveList + ')(?:=[\'"](.*?)[\'"])?','g');
+		var zoiAMetaRegExp = new RegExp('z-(' + directiveList + ')(?:=[\'"](.*?)[\'"])?','g');
 		var zoiAMetaResult = {};
 
 		var tmpMatchResult;
