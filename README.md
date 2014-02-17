@@ -30,7 +30,7 @@ What about this one?
 				<lable>Please Select:</label>
 				<select name="mySelect">
 				<%for(var j=0;j<myObj.myArr[i].options.length;j++){%>
-					<option value="<%=myObj.myArr[i].options[j].value%>" <%if(currValue === myObj.myArr[i].options[j].value){%><%}%>><%=myObj.myArr[i].options[j].text%></option>
+					<option value="<%=myObj.myArr[i].options[j].value%>" <%if(currValue === myObj.myArr[i].options[j].value){%>selected<%}%>><%=myObj.myArr[i].options[j].text%></option>
 				<%}%>
 				</select>
 			</div>
@@ -44,7 +44,7 @@ Oh, no! Can you tell what I'm doing?
 	<div class="select" z-repeat="arrItem:myObj.myArr" z-if="arrItem.show">
 		<label>Please Select:</label>
 		<select name="mySelect">
-			<option value="{{optionItem.value}}" z-repeat="optionItem:arrItem.options" z-select="currValue">
+			<option value="{{optionItem.value}}" z-repeat="optionItem:arrItem.options" z-selected="currValue">
 				{{optionItem.text}}
 			</option>
 		</select>
