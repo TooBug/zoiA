@@ -11,7 +11,7 @@
 
 	var zoiA = {};
 
-	zoiA.directiveList = 'repeat|show|hide|condition';
+	zoiA.directiveList = 'repeat|if|show|hide';
 
 	function encodeQuote(str){
 		if(!str) return str;
@@ -161,6 +161,15 @@
 									dataStr + '.forEach(function(' + repeatPart[0] + '){' +
 										functionBody +
 									'});' +
+								'}';
+			}
+			if(node.zoiA.if){
+				var dataStr = node.zoiA.if;
+				if(node.isRoot){
+					dataStr = 'data.' + dataStr;
+				}
+				functionBody = 'if(' + dataStr + '){' +
+									functionBody +
 								'}';
 			}
 		}
